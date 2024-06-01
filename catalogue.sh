@@ -1,25 +1,22 @@
 script_location=$(pwd)
 
-echo -e "\e[35m Install Nginx\e[0m"
-yum install nginx -y
+curl -sL https://rpm.nodesource.com/setup_lts.x | bash
+yum install nodejs -y
+useradd roboshop
+mkdir -p /app
+curl -L -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue.zip
+rm -rf /app/*
+cd /app
+unzip /tmp/catalogue.zip
+cd /app
+npm install
 
-echo -e "\e[35m Remove Nginx Old Content\e[0m"
-rm -rf /usr/share/nginx/html/*
+cp ${script_location}/files/catalogue.service /etc/systemd/system/catalogue.service
+systemctl daemon-reload
+systemctl enable catalogue
+systemctl start catalogue
 
-echo -e "\e[35m Download Frontend Content \e[0m"
-curl -o /tmp/frontend.zip https://roboshop-artifacts.s3.amazonaws.com/frontend.zip
+cp ${script_location}/files/mongodb.repo /etc/yum.repos.d/mongodb.repo
+yum install mongodb-org-shell -y
 
-cd /usr/share/nginx/html
-
-echo -e "\e[35m Extract Frontend Content\e[0m"
-unzip /tmp/frontend.zip
-
-echo -e "\e[35m Copy RoboShop Nginx Config File \e[0m"
-cp ${script_location}/files/nginx-roboshop.conf /etc/nginx/default.d/roboshop.conf
-
-
-echo -e "\e[35m Enable Nginx\e[0m"
-systemctl enable nginx
-
-echo -e "\e[35m Start Nginx\e[0m"
-systemctl restart nginx
+mongo --host mongodb-dev.devopsclassesc90.shop </app/schema/catalogue.js
